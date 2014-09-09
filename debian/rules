@@ -1,0 +1,30 @@
+#!/usr/bin/make -f
+
+clean:
+	dh_testdir
+	dh_testroot
+	dh_clean
+	-$(MAKE) clean
+
+build:
+	$(MAKE)
+
+binary-indep: install
+
+binary-arch: install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb -- -Z bzip2
+
+binary: binary-indep binary-arch
+
+install:
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/dovecot-plugin-extra-copies
+
+.PHONY: build clean binary-indep binary-arch binary install

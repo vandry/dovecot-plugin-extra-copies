@@ -1,0 +1,15 @@
+Source: dovecot-plugin-extra-copies
+Priority: extra
+Maintainer: Kim Vandry <vandry@TZoNE.ORG>
+Build-Depends: debhelper (>= 7), dovecot-dev
+Standards-Version: 3.8.3
+Section: mail
+
+Package: dovecot-plugin-extra-copies
+Section: mail
+Architecture: any
+Depends: ${dovecot:Depends}, ${shlibs:Depends}
+Description: Dovecot plugin for making additional copies of messages
+ Dovecot plugin for making additional copies of messages
+ in other folders whenever a message is added (appended,
+ posted, copied) to a given folder.
