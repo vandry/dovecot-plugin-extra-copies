@@ -15,6 +15,6 @@ extra_copies_plugin.so: $(OBJ)
 clean:
 	rm -rf $(OBJ) extra_copies_plugin extra_copies_plugin.so
 
-install: $(PLUGINS)
+install: extra_copies_plugin.so
 	mkdir -p $(INSTALL_DEST)
 	install -g bin -o root -m 0644 extra_copies_plugin.so $(INSTALL_DEST)
