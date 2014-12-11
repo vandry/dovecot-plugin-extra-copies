@@ -123,12 +123,21 @@ struct istream *input;
 const char *line;
 
 	if (!(box->name)) return;
+#if DOVECOT_PREREQ(2,2)
+	if (!mailbox_list_is_valid_name(box->list, box->name, &line)) return;
+	if (mail_storage_is_mailbox_file(box->list->ns->storage)) {
+		if (mailbox_list_get_path(box->list, box->name, MAILBOX_LIST_PATH_TYPE_CONTROL, &dir) != 1) return;
+	} else {
+		if (mailbox_list_get_path(box->list, box->name, MAILBOX_LIST_PATH_TYPE_MAILBOX, &dir) != 1) return;
+	}
+#else
 	if (!mailbox_list_is_valid_existing_name(box->list, box->name)) return;
 	if (mail_storage_is_mailbox_file(box->list->ns->storage)) {
 		dir = mailbox_list_get_path(box->list, box->name, MAILBOX_LIST_PATH_TYPE_CONTROL);
 	} else {
 		dir = mailbox_list_get_path(box->list, box->name, MAILBOX_LIST_PATH_TYPE_MAILBOX);
 	}
+#endif
 	if (!dir) return;
 	file = i_strconcat(dir, "/extra-copies", NULL);
 
