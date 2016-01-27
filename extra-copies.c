@@ -8,6 +8,7 @@
 #include <time.h>
 #include "lib.h"
 #include "istream.h"
+#include "array.h"
 #include "module-context.h"
 #include "mail-user.h"
 #include "mail-storage-private.h"
@@ -26,6 +27,7 @@ struct extra_copies_destination {
 struct extra_copies_box {
 	union mailbox_module_context module_ctx;
 	struct extra_copies_destination *dest;
+	ARRAY_TYPE(seq_range) new_uids;
 };
 
 static void
@@ -71,25 +73,35 @@ extra_copies_transaction_commit(
 {
 struct mailbox *box = t->box;
 struct extra_copies_box *this_box = EXTRA_COPIES_BOX_CONTEXT(box);
+
+	if ((this_box->module_ctx.super.transaction_commit(t, changes)) < 0)
+		return -1;
+
+	if (this_box && (this_box->dest)) {
+		seq_range_array_merge(&(this_box->new_uids), &(changes->saved_uids));
+	}
+
+	return 0;
+}
+
+static void
+extra_copies_close(struct mailbox *box)
+{
+struct extra_copies_box *this_box = EXTRA_COPIES_BOX_CONTEXT(box);
 int debug = box->list->ns->user->mail_debug;
 struct mailbox_transaction_context *trans;
 struct mail_search_args *search_args;
 struct mail_search_context *search_ctx;
 struct mail *mail;
-size_t count;
 struct extra_copies_destination *dest;
 
-	if ((this_box->module_ctx.super.transaction_commit(t, changes)) < 0)
-		return -1;
-
-	count = array_count(&(changes->saved_uids));
-	if (this_box && (this_box->dest) && (count > 0)) {
+	if (array_count(&(this_box->new_uids)) > 0) {
 		mailbox_sync(box, MAILBOX_SYNC_FLAG_FULL_READ);
 
 		search_args = mail_search_build_init();
 		search_args->args = p_new(search_args->pool, struct mail_search_arg, 1);
 		search_args->args->type = SEARCH_UIDSET;
-		search_args->args->value.seqset = changes->saved_uids;
+		search_args->args->value.seqset = this_box->new_uids;
 
 		trans = mailbox_transaction_begin(box, 0);
 		search_ctx = mailbox_search_init(trans, search_args, NULL, 0, NULL);
@@ -104,8 +116,8 @@ struct extra_copies_destination *dest;
 		mailbox_search_deinit(&search_ctx);
 		mailbox_transaction_commit(&trans);
 	}
-
-	return 0;
+	array_free(&(this_box->new_uids));
+	this_box->module_ctx.super.close(box);
 }
 
 static void
@@ -157,6 +169,7 @@ const char *line;
 
 	this_box = p_new(box->pool, struct extra_copies_box, 1);
 	this_box->dest = NULL;
+	i_array_init(&(this_box->new_uids), 128);
 
 	input = i_stream_create_fd(fd, 4096, FALSE);
 	while ((line = i_stream_read_next_line(input)) != NULL) {
@@ -180,6 +193,7 @@ const char *line;
 	box->vlast = &this_box->module_ctx.super;
 
 	v->transaction_commit = extra_copies_transaction_commit;
+	v->close = extra_copies_close;
 
 	MODULE_CONTEXT_SET(box, extra_copies_box_module, this_box);
 }
