@@ -1,3 +1,9 @@
+dovecot-plugin-extra-copies (1-2) unstable; urgency=low
+
+  * Added support for Dovecot 2.3
+
+ -- Kim Vandry <vandry@TZoNE.ORG>  Mon, 10 May 2021 17:24:25 +0100
+
 dovecot-plugin-extra-copies (1-1) unstable; urgency=low
 
   * Added support for Dovecot 2.2

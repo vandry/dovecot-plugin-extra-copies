@@ -50,6 +50,9 @@ struct mail_namespace *dest_ns;
 	} else {
 		trans = mailbox_transaction_begin(
 			destbox, MAILBOX_TRANSACTION_FLAG_EXTERNAL
+#if DOVECOT_PREREQ(2,3)
+			, __func__
+#endif
 		);
 		save_ctx = mailbox_save_alloc(trans);
 		mailbox_save_copy_flags(save_ctx, mail);
@@ -103,7 +106,12 @@ struct extra_copies_destination *dest;
 		search_args->args->type = SEARCH_UIDSET;
 		search_args->args->value.seqset = this_box->new_uids;
 
-		trans = mailbox_transaction_begin(box, 0);
+		trans = mailbox_transaction_begin(
+			box, 0
+#if DOVECOT_PREREQ(2,3)
+			, __func__
+#endif
+		);
 		search_ctx = mailbox_search_init(trans, search_args, NULL, 0, NULL);
 		mail_search_args_unref(&search_args);
 
@@ -171,7 +179,12 @@ const char *line;
 	this_box->dest = NULL;
 	i_array_init(&(this_box->new_uids), 128);
 
-	input = i_stream_create_fd(fd, 4096, FALSE);
+	input = i_stream_create_fd(
+		fd, 4096
+#if !DOVECOT_PREREQ(2,3)
+		, FALSE
+#endif
+	);
 	while ((line = i_stream_read_next_line(input)) != NULL) {
 		if (line[0]) {
 			cur = p_new(box->pool, struct extra_copies_destination, 1);
